@@ -1,0 +1,47 @@
+services:
+  # Define el servicio web
+  laravel-proyecto:
+    build: .
+    container_name: laravel-proyecto
+    volumes:
+      - ./hqgames:/var/www/html
+    ports:
+      - "80:80"
+    networks:
+      - web_network
+
+  # Define el servicio de BD
+  db:
+    image: mariadb
+    container_name: mariadb-proyecto
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_DATABASE}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_HOST: ${DB_HOST}
+    volumes:
+      - database_data:/var/lib/mysql
+    networks:
+      - web_network
+    restart: always
+
+  # Gestor de base de datos Web
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver-proyecto
+    ports:
+      - "8978:8978"
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+    networks:
+      - web_network
+    restart: unless-stopped
+
+volumes:
+  database_data:
+  cloudbeaver_data:
+
+networks:
+  web_network:
+    driver: bridge
