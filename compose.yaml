@@ -1,0 +1,67 @@
+services:
+  # Define el servicio web
+  laravel-proyecto:
+    build: .
+    container_name: laravel-proyecto
+    volumes:
+      - ./hqgames:/var/www/html
+      - ./certbot/certs:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - web_network
+    restart: always
+    env_file:
+      - ./hqgames/.env
+
+  # Define el servicio de BD
+  db:
+    image: mariadb
+    container_name: mariadb-proyecto
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_DATABASE}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_HOST: ${DB_HOST}
+    volumes:
+      - database_data:/var/lib/mysql
+    networks:
+      - web_network
+    restart: always
+
+  # Gestor de base de datos Web
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver-proyecto
+    ports:
+      - "8978:8978"
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+    networks:
+      - web_network
+    restart: unless-stopped
+
+# Define el servicio de Frontend (Node.js + Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: dockerfile.node
+    container_name: frontend_vite
+    volumes:
+      - ./hqgames:/var/www/html
+    ports:
+      - "5173:5173" # Puerto nativo de Vite
+    networks:
+      - web_network
+    restart: always
+    command: sh -c "npm install && npm run build && tail -f /dev/null"
+
+volumes:
+  database_data:
+  cloudbeaver_data:
+
+networks:
+  web_network:
+    driver: bridge
